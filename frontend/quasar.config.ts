@@ -37,12 +37,12 @@ export default configure((/* ctx */) => {
         node: 'node16'
       },
 
-      vueRouterMode: 'hash',
-      
+      vueRouterMode: 'history',
+
       extendViteConf: (viteConf) => {
         // vite конфигурация
       },
-      
+
       vitePlugins: [
         // vite плагины
       ]
