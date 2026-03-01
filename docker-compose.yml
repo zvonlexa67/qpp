@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    build:
+      context: ./postgres
+      dockerfile: Dockerfile
+    container_name: qpp-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-qpp_db}
+      POSTGRES_USER: ${POSTGRES_USER:-qpp_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-qpp_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    networks:
+      - qpp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-qpp_user} -d ${POSTGRES_DB:-qpp_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: qpp-backend
+    env_file:
+      - ./backend/.env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-qpp_db}
+      POSTGRES_USER: ${POSTGRES_USER:-qpp_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-qpp_password}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      DEBUG: ${DEBUG:-False}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:9000,http://localhost:8080}
+    volumes:
+      - ./backend:/app
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    networks:
+      - qpp-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Quasar Frontend (Dev mode with hot reload)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: qpp-frontend
+    environment:
+      - NODE_ENV=development
+      - VUE_APP_API_URL=/api/v1
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "${FRONTEND_PORT:-9000}:9000"
+    networks:
+      - qpp-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+    profiles:
+      - dev
+
+  # Quasar Frontend (Production build)
+  frontend-prod:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: qpp-frontend-prod
+    networks:
+      - qpp-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+    profiles:
+      - prod
+
+  # Nginx Reverse Proxy
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: qpp-nginx
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/nginx-dev.conf:/etc/nginx/conf.d/nginx-dev.conf
+      - nginx_logs:/var/log/nginx
+    networks:
+      - qpp-network
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+    profiles:
+      - prod
+
+  # Nginx for Development
+  nginx-dev:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile.dev
+    container_name: qpp-nginx-dev
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    volumes:
+      - ./nginx/nginx-dev.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - qpp-network
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+    profiles:
+      - dev
+
+networks:
+  qpp-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  nginx_logs:
+    driver: local

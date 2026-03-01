@@ -1,0 +1,41 @@
+{
+  "name": "qpp-frontend",
+  "version": "1.0.0",
+  "description": "QPP Frontend Application",
+  "productName": "QPP",
+  "author": "qpp",
+  "private": true,
+  "scripts": {
+    "dev": "quasar dev",
+    "build": "quasar build",
+    "lint": "eslint --ext .js,.ts,.vue ./",
+    "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
+    "test": "echo \"No test specified\" && exit 0"
+  },
+  "dependencies": {
+    "@quasar/extras": "^1.16.9",
+    "axios": "^1.6.5",
+    "pinia": "^2.1.7",
+    "quasar": "^2.14.2",
+    "vue": "^3.4.15",
+    "vue-router": "^4.2.5"
+  },
+  "devDependencies": {
+    "@quasar/app-vite": "^3.7.5",
+    "@types/node": "^20.11.5",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "autoprefixer": "^10.4.17",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-vue": "^9.20.1",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3",
+    "vue-tsc": "^1.8.27"
+  },
+  "engines": {
+    "node": "^20 || ^18 || ^16",
+    "npm": ">= 6.13.4",
+    "yarn": ">= 1.21.1"
+  }
+}
